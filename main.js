@@ -1,13 +1,13 @@
 const {useState} = React; //從React物件中取出useState方法
 
-const SignInForm = () => {
+const SignInForm = ({api,setToken}) => {
     const [emailSignIn, setEmailSignIn] = useState('');
     const [passwordSignIn, setPasswordSignIn] = useState('');
     const [responseMessage, setResponseMessage] = useState('');
     const [isErrorMessage, setIsErrorMessage] = useState(false);
-    const [token, setToken] = useState('');
+
   
-    const api = 'https://todolist-api.hexschool.io';
+
     
     // 練習區塊
     const signIn = () => {
@@ -23,7 +23,11 @@ const SignInForm = () => {
         }).catch(error=>{
             setResponseMessage('登入失敗');
             setIsErrorMessage(true);
-        }).finally(()=>console.log('登入流程結束'))
+        }).finally(()=>{
+          setEmailSignIn('');
+          setPasswordSignIn('');
+          console.log('登入流程結束')
+        })
   
     };
     // 區塊結束
@@ -67,15 +71,13 @@ const SignInForm = () => {
     );
   };
 
-  const SignUpForm = () => {
+const SignUpForm = ({api,setToken}) => {
     const [emailSignUp, setEmailSignUp] = useState('');
     const [passwordSignUp, setPasswordSignUp] = useState('');
     const [nicknameSignUp, setNicknameSignUp] = useState('');
     const [responseMessage, setResponseMessage] = useState('');
     const [isErrorMessage, setIsErrorMessage] = useState(false);
-    const [token, setToken] = useState('');
   
-    const api = 'https://todolist-api.hexschool.io';
     
     // 練習區塊
     const signUp = () => {
@@ -92,7 +94,11 @@ const SignInForm = () => {
         }).catch(error=>{
             setResponseMessage('註冊失敗');
             setIsErrorMessage(true);
-        }).finally(()=>console.log('註冊流程結束'))
+        }).finally(()=>{
+          setEmailSignIn('');
+          setPasswordSignIn('');
+          console.log('登入流程結束')
+        })
   
     };
     // 區塊結束
@@ -147,11 +153,105 @@ const SignInForm = () => {
     );
   };
 
+const TodoForm = ({api,token}) =>{
+
+  const [newTodo, setNewTodo] = useState('');
+  const [todos, setTodos] = useState([]);
+
+  const addTodo = () =>{
+    axios.post(`${api}/todos/`,
+      {content: newTodo},
+      {
+      headers:{
+        Authorization: token,
+      }
+    })
+    .then(response =>{
+      console.log(response.data.newTodo);
+      console.log('新增成功');
+      setNewTodo('');
+      getTodos();
+    })
+    .catch(error =>{
+      console.log(error.response.data);
+      console.log('新增失敗');
+    })
+  };
+
+  const getTodos= ()=>{
+    axios.get(`${api}/todos`, {
+      headers: { Authorization: token }
+    })
+    .then(response =>{
+      setTodos(response.data.data);
+      console.log('資料取得成功');
+    })
+    .catch(error =>{
+      console.log(error.response.data);
+      console.log('資料取得失敗');
+    })
+  }
+
+  const deleteTodo = async (id) => {
+    try{
+      const response = await axios.delete(`${api}/todos/${id}`,{
+        headers: { Authorization: token }
+      })
+      console.log(response);
+      getTodos(token);
+    }catch(error){
+      console.log(error);
+      console.log('刪除失敗');
+    }finally{
+      console.log('刪除流程完成');
+    }
+
+
+  };
+
+  return (
+    <div className="container mt-2">
+      <form>
+        <h2>新增資料</h2>
+        <div className="form-group">
+          <input
+          value={newTodo}
+          onChange={(e) => setNewTodo(e.target.value)}
+          type="text"
+          className="form-control"
+          placeholder="請輸入內容"
+          />
+          </div>
+          <button type="button" className="btn btn-primary mt-3" onClick={addTodo}>送出</button>
+      </form>
+      <h2>取得資料</h2>
+      <ul>
+        {todos.map((item) => (
+          <li key={item.id} className="mt-3 ms-1">
+            {item.content}
+            <button
+              onClick={() => deleteTodo(item.id)}
+              type="button"
+              className="btn btn-danger ms-2"
+            >
+              刪除
+            </button>
+          </li>
+        ))}
+      </ul>
+  </div>)
+}
+
 function App(){
+
+  const [token, setToken] = useState('');
+  const api = 'https://todolist-api.hexschool.io';
+
     return(
         <div>
-            <SignInForm></SignInForm>
-            <SignUpForm></SignUpForm>
+            <SignInForm api={api} setToken={setToken}></SignInForm>
+            <SignUpForm api={api} setToken={setToken}></SignUpForm>
+            <TodoForm api={api} token={token}></TodoForm>
         </div>
     )
 }
